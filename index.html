@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0a0c11">
+<meta name="description" content="Exact probability calculator for Blood Strike-style Evo stash pulls. See your chance of at least one Evo in 1, 10, or 50 pulls, with hard pity, optional soft pity, and full distributions.">
+<link rel="canonical" href="https://johnlenya.github.io/evo-pull-odds/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Evo Pull Odds — Blood Strike Stash Calculator">
+<meta property="og:description" content="Exact chances of pulling Evo skins in 1, 10, or 50 stash pulls. Editable rates, hard pity, soft pity, and full distributions.">
+<meta property="og:url" content="https://johnlenya.github.io/evo-pull-odds/">
+<meta name="twitter:card" content="summary">
+<title>Evo Pull Odds — Blood Strike Stash Calculator</title>
+<style>
+  :root {
+    --bg: #0a0c11;
+    --panel: #12151d;
+    --panel-2: #161a24;
+    --line: #232a3a;
+    --line-soft: rgba(255, 255, 255, 0.055);
+    --text: #e8ebf2;
+    --muted: #8b93a7;
+    --accent: #ff3d57;
+    --accent-soft: rgba(255, 61, 87, 0.12);
+    --amber: #ffb020;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    background:
+      radial-gradient(1100px 560px at 88% -12%, rgba(255, 61, 87, 0.11), transparent 62%),
+      radial-gradient(820px 460px at -8% 0%, rgba(88, 116, 255, 0.06), transparent 58%),
+      var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 26px 22px 46px;
+  }
+
+  .top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+
+  .brand { display: flex; align-items: center; gap: 14px; }
+
+  .brand-mark {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: #fff;
+    background: linear-gradient(145deg, #ff4159, #a80f2c);
+    box-shadow: 0 10px 28px rgba(255, 61, 87, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+  }
+
+  .sub {
+    margin: 3px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .source-pill {
+    font-size: 11.5px;
+    color: #ffd4da;
+    background: rgba(255, 61, 87, 0.09);
+    border: 1px solid rgba(255, 61, 87, 0.28);
+    padding: 7px 12px;
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+  }
+
+  .panel {
+    background: linear-gradient(180deg, #141824, #10131a);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+  }
+
+  .controls {
+    padding: 20px;
+    position: sticky;
+    top: 18px;
+  }
+
+  .panel-title {
+    margin: 0 0 17px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .field { margin-bottom: 15px; }
+
+  .field label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #c8cfdf;
+  }
+
+  .suffix { color: var(--muted); font-weight: 500; }
+
+  .hint {
+    margin: 6px 0 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #78839a;
+  }
+
+  input[type="number"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #2a3245;
+    border-radius: 10px;
+    background: #0b0e15;
+    color: var(--text);
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  input[type="number"]:focus {
+    outline: none;
+    border-color: rgba(255, 61, 87, 0.72);
+    box-shadow: 0 0 0 3px rgba(255, 61, 87, 0.14);
+  }
+
+  input[type="number"]:disabled {
+    color: #6f788c;
+    cursor: not-allowed;
+  }
+
+  .toggle-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 0;
+    margin: 4px 0 12px;
+    border-top: 1px solid #1c2231;
+    border-bottom: 1px solid #1c2231;
+  }
+
+  .toggle-field .hint { margin-top: 3px; }
+
+  .switch {
+    flex: none;
+    width: 46px;
+    height: 25px;
+    border-radius: 999px;
+    border: 1px solid #3a445c;
+    background: #262e40;
+    padding: 0;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.16s, border-color 0.16s;
+  }
+
+  .switch span {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    background: #8b95ab;
+    transition: transform 0.16s, background 0.16s;
+  }
+
+  .switch[aria-checked="true"] {
+    background: linear-gradient(140deg, #ff4159, #d21736);
+    border-color: #ff5166;
+  }
+
+  .switch[aria-checked="true"] span {
+    transform: translateX(21px);
+    background: #fff;
+  }
+
+  .switch:focus-visible {
+    outline: 2px solid #ffb020;
+    outline-offset: 2px;
+  }
+
+  .pity-fields {
+    transition: opacity 0.15s;
+  }
+
+  .pity-fields.is-disabled {
+    opacity: 0.4;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .chip {
+    padding: 6px 11px;
+    border-radius: 8px;
+    border: 1px solid #2c3549;
+    background: #151a25;
+    color: #c6cddd;
+    font: inherit;
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+  }
+
+  .chip:hover {
+    border-color: rgba(255, 61, 87, 0.55);
+    color: #fff;
+    background: rgba(255, 61, 87, 0.08);
+  }
+
+  .ghost-btn {
+    width: 100%;
+    margin-top: 4px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #2c3549;
+    background: transparent;
+    color: #b9c2d5;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+
+  .ghost-btn:hover {
+    border-color: #49546e;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .callout {
+    margin-top: 16px;
+    padding: 12px 13px;
+    border-radius: 11px;
+    background: rgba(255, 176, 32, 0.055);
+    border: 1px solid rgba(255, 176, 32, 0.18);
+    color: #b9ad90;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+
+  .callout strong { color: #f0d59c; }
+
+  .results {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 2px;
+  }
+
+  .section-head h2 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .section-head span {
+    font-size: 11px;
+    color: #697489;
+  }
+
+  .plan-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(120px, 1.15fr);
+    gap: 11px;
+  }
+
+  .plan-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    padding: 14px 15px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, #141824, #10131a);
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.16s, background 0.16s, transform 0.16s;
+  }
+
+  .plan-card:hover {
+    border-color: #35405a;
+    transform: translateY(-1px);
+  }
+
+  .plan-card.active {
+    border-color: rgba(255, 61, 87, 0.62);
+    background:
+      radial-gradient(120% 140% at 12% 0%, rgba(255, 61, 87, 0.15), transparent 60%),
+      linear-gradient(180deg, #171a25, #11141c);
+    box-shadow: 0 10px 26px rgba(255, 61, 87, 0.10);
+  }
+
+  .plan-card:focus-visible {
+    outline: 2px solid #ffb020;
+    outline-offset: 2px;
+  }
+
+  .plan-name {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #7e889d;
+  }
+
+  .plan-chance {
+    font-size: 23px;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    line-height: 1.1;
+  }
+
+  .plan-odds {
+    font-size: 11px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .plan-card.custom { cursor: default; }
+
+  .custom-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .custom-row input[type="number"] {
+    padding: 4px 8px;
+    font-size: 19px;
+    font-weight: 750;
+    border-radius: 8px;
+    width: 74px;
+  }
+
+  .custom-row span {
+    font-size: 10.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.18fr) minmax(250px, 0.95fr);
+    gap: 22px;
+    align-items: center;
+    padding: 22px 24px;
+    background:
+      radial-gradient(430px 230px at 8% -10%, rgba(255, 61, 87, 0.17), transparent 72%),
+      linear-gradient(180deg, #161b27, #10131b);
+    border: 1px solid #293143;
+  }
+
+  .eyebrow {
+    margin: 0 0 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #909bb2;
+  }
+
+  .hero-value {
+    font-size: clamp(44px, 6.4vw, 68px);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+  }
+
+  .hero-value.guaranteed {
+    color: #ffd7dd;
+    text-shadow: 0 0 34px rgba(255, 61, 87, 0.45);
+  }
+
+  .hero-odds {
+    margin: 9px 0 0;
+    font-size: 12.5px;
+    color: #98a2b7;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hero-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .hero-stats > div {
+    padding: 10px 12px;
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    min-width: 0;
+  }
+
+  .hero-stats span {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #7d879c;
+    line-height: 1.25;
+    min-height: 23px;
+  }
+
+  .hero-stats strong {
+    font-size: 17px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chart-panel { padding: 16px 16px 8px; }
+
+  .chart-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 2px 6px;
+  }
+
+  .chart-head h3 {
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 650;
+    color: #d3d9e6;
+    letter-spacing: 0.01em;
+  }
+
+  .chart-head span {
+    font-size: 10.5px;
+    color: #6f7a90;
+    text-align: right;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+  }
+
+  svg text { font-family: inherit; }
+
+  .grid {
+    stroke: rgba(255, 255, 255, 0.055);
+    stroke-width: 1;
+  }
+
+  .axis-label {
+    fill: #7d879c;
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .axis-title {
+    fill: #7d879c;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .marker-label {
+    fill: #ffd6dc;
+    font-size: 10px;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bar-label {
+    fill: #cfd6e4;
+    font-size: 9px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .table-panel { padding: 16px 16px 12px; }
+
+  .table-wrap {
+    max-height: 320px;
+    overflow: auto;
+    border-radius: 10px;
+    border: 1px solid #1e2534;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 9px 13px;
+    background: #151a25;
+    border-bottom: 1px solid #242c3d;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: #7d879c;
+    text-align: right;
+  }
+
+  thead th:first-child { text-align: left; }
+
+  tbody td {
+    padding: 8px 13px;
+    border-top: 1px solid #1b2130;
+    text-align: right;
+    color: #cdd4e2;
+  }
+
+  tbody td:first-child {
+    text-align: left;
+    color: #eef1f7;
+    font-weight: 600;
+  }
+
+  tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.013); }
+
+  tbody tr:hover td { background: rgba(255, 61, 87, 0.045); }
+
+  .table-note {
+    margin: 8px 2px 0;
+    font-size: 10.5px;
+    color: #6f7a90;
+  }
+
+  .footnote {
+    margin: 0 2px;
+    font-size: 11px;
+    line-height: 1.6;
+    color: #6d778c;
+  }
+
+  .site-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 18px;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid #1c2231;
+    font-size: 11px;
+    color: #6d778c;
+  }
+
+  .site-footer a {
+    color: #b8c1d4;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .site-footer a:hover {
+    color: #fff;
+    text-decoration: underline;
+  }
+
+  @media (max-width: 940px) {
+    .layout { grid-template-columns: 1fr; }
+    .controls { position: static; }
+    .hero { grid-template-columns: 1fr; }
+    .plan-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 560px) {
+    .page { padding: 18px 14px 36px; }
+    .plan-chance { font-size: 20px; }
+    .hero { padding: 18px; }
+    .hero-stats { grid-template-columns: 1fr 1fr; }
+    .hero-stats span { font-size: 9px; }
+    .hero-stats strong { font-size: 15px; }
+    .section-head span { display: none; }
+    .source-pill { white-space: normal; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">EVO</div>
+      <div>
+        <h1>Evo Pull Odds</h1>
+        <p class="sub">Exact probability calculator for Blood Strike-style Evo stashes</p>
+      </div>
+    </div>
+    <div class="source-pill">Stash defaults: ~1% per draw · 100-draw guarantee</div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel controls" aria-label="Stash settings">
+      <h2 class="panel-title">Stash settings</h2>
+
+      <div class="field">
+        <label for="baseRate">Per-draw Evo chance <span class="suffix">(%)</span></label>
+        <input id="baseRate" type="number" inputmode="decimal" min="0" max="100" step="0.01" value="1">
+        <p class="hint">Community-reported stash top-reward rate (~1% weapon, ~0.5% striker). Check your stash's in-game odds panel for the exact number.</p>
+      </div>
+
+      <div class="field">
+        <label>Quick fill</label>
+        <div class="chips">
+          <button type="button" class="chip" data-rate="0.5">0.5%</button>
+          <button type="button" class="chip" data-rate="1">1%</button>
+          <button type="button" class="chip" data-rate="2">2%</button>
+          <button type="button" class="chip" data-rate="4">4%</button>
+        </div>
+      </div>
+
+      <div class="field toggle-field">
+        <div>
+          <label for="pityToggle">Pity guarantee</label>
+          <p class="hint">Featured top reward guaranteed at a fixed draw count.</p>
+        </div>
+        <button id="pityToggle" type="button" class="switch" role="switch" aria-checked="true" aria-label="Pity guarantee"><span></span></button>
+      </div>
+
+      <div id="pityFields" class="pity-fields">
+        <div class="field">
+          <label for="hardPity">Hard pity at draw <span class="suffix">#</span></label>
+          <input id="hardPity" type="number" inputmode="numeric" min="1" max="1000" step="1" value="100">
+          <p class="hint">100% chance on this draw, then the counter resets.</p>
+        </div>
+        <div class="field two-col">
+          <div>
+            <label for="softStart">Soft pity from <span class="suffix">#</span></label>
+            <input id="softStart" type="number" inputmode="numeric" min="1" max="1000" step="1" value="100">
+          </div>
+          <div>
+            <label for="softInc">Add / draw <span class="suffix">pp</span></label>
+            <input id="softInc" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="0">
+          </div>
+        </div>
+        <p class="hint">Stash reports show no soft-pity ramp, so the step stays at 0. Raise it for banners that ramp.</p>
+      </div>
+
+      <button id="resetBtn" type="button" class="ghost-btn">Reset stash defaults</button>
+
+      <div class="callout">
+        <strong>Model.</strong> Independent draws, fresh counter, chance resets when an Evo drops. Probabilities are computed exactly with dynamic programming — no simulation.
+      </div>
+    </aside>
+
+    <section class="results" aria-live="polite">
+      <div class="section-head">
+        <h2>Pull plans</h2>
+        <span>chance of at least one Evo</span>
+      </div>
+
+      <div class="plan-row">
+        <button type="button" class="plan-card" data-plan="1" aria-pressed="false">
+          <span class="plan-name">1 Pull</span>
+          <strong class="plan-chance" id="chance-1">—</strong>
+          <span class="plan-odds" id="odds-1">—</span>
+        </button>
+        <button type="button" class="plan-card" data-plan="10" aria-pressed="false">
+          <span class="plan-name">10 Pulls</span>
+          <strong class="plan-chance" id="chance-10">—</strong>
+          <span class="plan-odds" id="odds-10">—</span>
+        </button>
+        <button type="button" class="plan-card" data-plan="50" aria-pressed="false">
+          <span class="plan-name">50 Pulls</span>
+          <strong class="plan-chance" id="chance-50">—</strong>
+          <span class="plan-odds" id="odds-50">—</span>
+        </button>
+        <div class="plan-card custom" id="customCard" role="group" aria-label="Custom pull plan">
+          <span class="plan-name">Custom</span>
+          <div class="custom-row">
+            <input id="customPulls" type="number" inputmode="numeric" min="1" max="300" step="1" value="25" aria-label="Custom number of pulls">
+            <span>pulls</span>
+          </div>
+          <span class="plan-odds" id="customMeta">—</span>
+        </div>
+      </div>
+
+      <div class="panel hero">
+        <div class="hero-left">
+          <p class="eyebrow" id="heroEyebrow">Chance of at least one Evo · 10 pulls</p>
+          <div class="hero-value" id="heroValue">—</div>
+          <p class="hero-odds" id="heroOdds">—</p>
+        </div>
+        <div class="hero-stats">
+          <div><span>Expected Evos</span><strong id="expEvos">—</strong></div>
+          <div><span>Chance of 2+</span><strong id="chance2">—</strong></div>
+          <div><span>Avg draws to first</span><strong id="expFirst">—</strong></div>
+          <div><span>Median draws to first</span><strong id="medFirst">—</strong></div>
+        </div>
+      </div>
+
+      <div class="panel chart-panel">
+        <div class="chart-head">
+          <h3>Chance of at least one Evo, draw by draw</h3>
+          <span id="chartANote"></span>
+        </div>
+        <svg id="chartA" role="img" aria-label="Line chart showing chance of at least one Evo by draw number"></svg>
+      </div>
+
+      <div class="panel chart-panel">
+        <div class="chart-head">
+          <h3 id="chartBTitle">Exactly k Evos</h3>
+          <span>distribution at the end of the plan</span>
+        </div>
+        <svg id="chartB" role="img" aria-label="Bar chart showing the distribution of Evo skins obtained"></svg>
+      </div>
+
+      <div class="panel table-panel">
+        <div class="chart-head">
+          <h3>Probability table</h3>
+          <span id="tablePlan"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Evo skins</th><th>Exactly</th><th>At least</th></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <p class="table-note" id="tableNote"></p>
+      </div>
+
+      <p class="footnote">
+        Defaults follow community-reported Blood Strike stash behavior: top-tier weapon skin ≈1% per draw (striker ≈0.5%), featured reward guaranteed at 100 draws, and no soft-pity ramp before the guarantee. Official per-stash odds are published in the in-game odds panel and override these defaults. Each stash's guarantee wording can differ — toggle pity off if your stash has none. Multi-pull discounts and non-Evo guarantees are not modeled.
+      </p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <span>Fan-made calculator · not affiliated with NetEase · defaults are community-reported; in-game odds are authoritative.</span>
+    <a href="https://github.com/johnlenya/evo-pull-odds">Source on GitHub</a>
+  </footer>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    baseRate: $('baseRate'),
+    pityToggle: $('pityToggle'),
+    pityFields: $('pityFields'),
+    hardPity: $('hardPity'),
+    softStart: $('softStart'),
+    softInc: $('softInc'),
+    customPulls: $('customPulls'),
+    customCard: $('customCard'),
+    customMeta: $('customMeta'),
+    resetBtn: $('resetBtn'),
+    heroEyebrow: $('heroEyebrow'),
+    heroValue: $('heroValue'),
+    heroOdds: $('heroOdds'),
+    expEvos: $('expEvos'),
+    chance2: $('chance2'),
+    expFirst: $('expFirst'),
+    medFirst: $('medFirst'),
+    chartA: $('chartA'),
+    chartB: $('chartB'),
+    chartBTitle: $('chartBTitle'),
+    chartANote: $('chartANote'),
+    tableBody: $('tableBody'),
+    tableNote: $('tableNote'),
+    tablePlan: $('tablePlan'),
+    planCards: Array.from(document.querySelectorAll('.plan-card[data-plan]')),
+    chips: Array.from(document.querySelectorAll('.chip')),
+  };
+
+  const DEFAULTS = {
+    rate: 1,
+    hardPity: 100,
+    softStart: 100,
+    softInc: 0,
+    pity: true,
+    plan: 10,
+    custom: 25,
+  };
+
+  const state = {
+    plan: DEFAULTS.plan,
+    activePreset: DEFAULTS.plan,
+    pity: DEFAULTS.pity,
+  };
+
+  let timer = null;
+
+  function schedule() {
+    clearTimeout(timer);
+    timer = setTimeout(recompute, 80);
+  }
+
+  function clamp(v, lo, hi) {
+    return Math.min(hi, Math.max(lo, v));
+  }
+
+  function readNum(el, fallback, lo, hi) {
+    const v = parseFloat(el.value);
+    return Number.isFinite(v) ? clamp(v, lo, hi) : fallback;
+  }
+
+  function readInt(el, fallback, lo, hi) {
+    const v = parseInt(el.value, 10);
+    return Number.isFinite(v) ? clamp(v, lo, hi) : fallback;
+  }
+
+  function currentCfg() {
+    const hardPity = Math.round(readNum(els.hardPity, DEFAULTS.hardPity, 1, 1000));
+    const softStart = Math.min(
+      Math.round(readNum(els.softStart, DEFAULTS.softStart, 1, 1000)),
+      hardPity
+    );
+    const softInc = readNum(els.softInc, DEFAULTS.softInc, 0, 100) / 100;
+    const base = readNum(els.baseRate, DEFAULTS.rate, 0, 100) / 100;
+    return { base, pity: state.pity, softStart, softInc, hardPity };
+  }
+
+  // Probability on the next draw after `c` consecutive misses.
+  function effP(c, cfg) {
+    const drawNo = c + 1;
+    if (drawNo >= cfg.hardPity) return 1;
+    if (drawNo >= cfg.softStart) {
+      const steps = drawNo - cfg.softStart + 1;
+      return Math.min(1, cfg.base + cfg.softInc * steps);
+    }
+    return cfg.base;
+  }
+
+  // Lanczos log-gamma for stable binomial coefficients.
+  function lgamma(x) {
+    const C = [
+      0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+      771.32342877765313, -176.61502916214059, 12.507343278686905,
+      -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
+    ];
+    if (x < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * x)) - lgamma(1 - x);
+    x -= 1;
+    let a = C[0];
+    const t = x + 7.5;
+    for (let i = 1; i < 9; i++) a += C[i] / (x + i);
+    return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a);
+  }
+
+  function binomialPMF(n, p) {
+    const dist = new Float64Array(n + 1);
+    if (p <= 0) { dist[0] = 1; return dist; }
+    if (p >= 1) { dist[n] = 1; return dist; }
+    const lp = Math.log(p);
+    const lq = Math.log1p(-p);
+    const lgN = lgamma(n + 1);
+    for (let k = 0; k <= n; k++) {
+      const logP = lgN - lgamma(k + 1) - lgamma(n - k + 1) + k * lp + (n - k) * lq;
+      dist[k] = Math.exp(logP);
+    }
+    return dist;
+  }
+
+  // Exact distribution of total Evo skins in n draws.
+  function evoDist(n, cfg) {
+    if (!cfg.pity) return binomialPMF(n, cfg.base);
+
+    const H = cfg.hardPity;
+    const rows = Math.min(H, n + 1);
+    const make = () => Array.from({ length: rows }, () => new Float64Array(n + 1));
+    let dp = make();
+    let next = make();
+    dp[0][0] = 1;
+
+    for (let t = 0; t < n; t++) {
+      for (const row of next) row.fill(0);
+      const maxC = Math.min(t, rows - 1);
+
+      for (let c = 0; c <= maxC; c++) {
+        const s = effP(c, cfg);
+        const f = 1 - s;
+        const row = dp[c];
+        const failRow = next[Math.min(c + 1, rows - 1)];
+        const successRow = next[0];
+
+        for (let k = 0; k <= t; k++) {
+          const v = row[k];
+          if (v === 0) continue;
+          if (f > 0) failRow[k] += v * f;
+          successRow[k + 1] += v * s;
+        }
+      }
+
+      const swap = dp;
+      dp = next;
+      next = swap;
+    }
+
+    const dist = new Float64Array(n + 1);
+    for (let c = 0; c < rows; c++) {
+      const row = dp[c];
+      for (let k = 0; k <= n; k++) dist[k] += row[k];
+    }
+    return dist;
+  }
+
+  // S[t] = probability of zero Evos after t draws (fresh counter).
+  function survivalUpTo(n, cfg) {
+    const S = new Float64Array(n + 1);
+    S[0] = 1;
+    if (!cfg.pity) {
+      const q = 1 - cfg.base;
+      for (let t = 1; t <= n; t++) S[t] = S[t - 1] * q;
+    } else {
+      for (let t = 1; t <= n; t++) S[t] = S[t - 1] * (1 - effP(t - 1, cfg));
+    }
+    return S;
+  }
+
+  function firstEvoStats(cfg) {
+    if (!cfg.pity) {
+      if (cfg.base <= 0) return { mean: Infinity, median: Infinity };
+      if (cfg.base >= 1) return { mean: 1, median: 1 };
+      return {
+        mean: 1 / cfg.base,
+        median: Math.ceil(Math.log(0.5) / Math.log1p(-cfg.base)),
+      };
+    }
+
+    let S = 1;
+    let mean = 0;
+    let median = null;
+    for (let t = 1; t <= cfg.hardPity; t++) {
+      mean += S;
+      S *= 1 - effP(t - 1, cfg);
+      if (median === null && 1 - S >= 0.5) median = t;
+      if (S <= 0) break;
+    }
+    return { mean, median: median === null ? Infinity : median };
+  }
+
+  // ---------- formatting ----------
+
+  function trimFixed(x, digits) {
+    let s = x.toFixed(digits);
+    if (s.includes('.')) s = s.replace(/0+$/, '').replace(/\.$/, '');
+    return s;
+  }
+
+  function fmtPct(x) {
+    if (x <= 0) return '0%';
+    if (x >= 0.99995) return '100%';
+    const p = x * 100;
+    if (p >= 1) return trimFixed(p, 2) + '%';
+    if (p >= 0.01) return trimFixed(p, 3) + '%';
+    return trimFixed(p, 4) + '%';
+  }
+
+  function fmtTablePct(x) {
+    if (x <= 0) return '0%';
+    if (x >= 0.999995) return '100%';
+    const p = x * 100;
+    if (p < 0.0001) return '<0.0001%';
+    return p.toFixed(3) + '%';
+  }
+
+  function fmtAxisPct(v) {
+    const p = v * 100;
+    if (p === 0) return '0%';
+    if (p >= 10) return p.toFixed(0) + '%';
+    if (p >= 1) return trimFixed(p, 1) + '%';
+    if (p >= 0.01) return trimFixed(p, 2) + '%';
+    if (p >= 0.0001) return trimFixed(p, 4) + '%';
+    return '<0.0001%';
+  }
+
+  function fmtBarPct(x) {
+    const p = x * 100;
+    if (p >= 10) return p.toFixed(0) + '%';
+    if (p >= 1) return trimFixed(p, 1) + '%';
+    return trimFixed(p, 2) + '%';
+  }
+
+  function fmtX(x) {
+    if (!Number.isFinite(x)) return '∞';
+    if (x >= 1000) return Math.round(x).toLocaleString();
+    if (x >= 100) return String(Math.round(x));
+    if (x >= 10) return x.toFixed(1);
+    return x.toFixed(2);
+  }
+
+  function fmtDraws(x) {
+    if (!Number.isFinite(x)) return '—';
+    if (x >= 100) return Math.round(x).toLocaleString();
+    return trimFixed(x, 1);
+  }
+
+  function shortOdds(x) {
+    if (x <= 0) return 'no chance';
+    if (x >= 0.99995) return 'guaranteed';
+    if (x >= 0.5) return 'better than even';
+    return '1 in ' + fmtX(1 / x);
+  }
+
+  function heroOddsText(chance, cfg, plan, guaranteeDraw) {
+    if (chance <= 0) return 'No Evo chance with these settings';
+    if (chance >= 0.99995) return `Guaranteed${guaranteeDraw ? ` by draw ${guaranteeDraw}` : ''}`;
+    let text = chance >= 0.5
+      ? 'More likely than not to hit'
+      : `≈ 1 in ${fmtX(1 / chance)} attempts`;
+    if (cfg.pity && plan < cfg.hardPity) text += ` · guarantee at draw ${cfg.hardPity}`;
+    return text;
+  }
+
+  function chartNote(cfg, plan) {
+    if (!cfg.pity) return 'flat rate · no pity';
+    const bits = [`hard pity at draw ${cfg.hardPity}`];
+    if (cfg.softInc > 0) bits.push(`soft ramp from draw ${cfg.softStart}`);
+    if (plan > cfg.hardPity) bits.push('guarantee included');
+    return bits.join(' · ');
+  }
+
+  function niceCeil(x) {
+    if (!(x > 0)) return 1;
+    const exp = Math.pow(10, Math.floor(Math.log10(x)));
+    const f = x / exp;
+    const nf = f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10;
+    return nf * exp;
+  }
+
+  function xTicks(n, count) {
+    if (n <= 12) return Array.from({ length: n }, (_, i) => i + 1);
+    const step = Math.ceil((n - 1) / (count - 1));
+    const out = [];
+    for (let t = 1; t <= n; t += step) out.push(t);
+    if (out[out.length - 1] !== n) out.push(n);
+    return out;
+  }
+
+  // ---------- charts ----------
+
+  function setSvg(svg, w, h, inner) {
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    svg.innerHTML = inner;
+  }
+
+  function renderChartA(survival, n) {
+    const W = Math.max(300, Math.round(els.chartA.clientWidth || 720));
+    const narrow = W < 560;
+    const H = narrow ? 212 : 234;
+    const padL = narrow ? 42 : 48;
+    const padR = 12;
+    const padT = 20;
+    const padB = 30;
+    const iw = W - padL - padR;
+    const ih = H - padT - padB;
+
+    const X = (t) => (n === 1 ? padL + iw / 2 : padL + ((t - 1) / (n - 1)) * iw);
+
+    let maxChance = 0;
+    for (let t = 1; t <= n; t++) maxChance = Math.max(maxChance, 1 - survival[t]);
+    let top = niceCeil(maxChance);
+    top = Math.min(1, Math.max(0.001, top));
+    const Y = (v) => padT + (1 - v / top) * ih;
+
+    let s = '<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="#ff3d57" stop-opacity="0.30"/>' +
+      '<stop offset="100%" stop-color="#ff3d57" stop-opacity="0.01"/>' +
+      '</linearGradient></defs>';
+
+    for (let g = 0; g <= 4; g++) {
+      const v = (top * g) / 4;
+      s += `<line class="grid" x1="${padL}" y1="${Y(v).toFixed(1)}" x2="${W - padR}" y2="${Y(v).toFixed(1)}"/>`;
+      s += `<text class="axis-label" x="${padL - 8}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end">${fmtAxisPct(v)}</text>`;
+    }
+
+    const pts = [];
+    for (let t = 1; t <= n; t++) pts.push([X(t), Y(1 - survival[t])]);
+
+    if (n > 1) {
+      const line = pts
+        .map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`)
+        .join(' ');
+      s += `<path d="${line} L${X(n).toFixed(1)},${Y(0).toFixed(1)} L${X(1).toFixed(1)},${Y(0).toFixed(1)} Z" fill="url(#areaGrad)"/>`;
+      s += `<path d="${line}" fill="none" stroke="#ff4d63" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    } else {
+      s += `<circle cx="${X(1).toFixed(1)}" cy="${Y(1 - survival[1]).toFixed(1)}" r="4.5" fill="#ff4d63"/>`;
+    }
+
+    xTicks(n, narrow ? 6 : 8).forEach((t) => {
+      s += `<text class="axis-label" x="${X(t).toFixed(1)}" y="${H - 9}" text-anchor="middle">${t}</text>`;
+    });
+
+    for (let t = 1; t <= n; t++) {
+      s += `<circle cx="${X(t).toFixed(1)}" cy="${Y(1 - survival[t]).toFixed(1)}" r="7" fill="transparent">` +
+        `<title>Draw ${t}: ${fmtPct(1 - survival[t])} chance of at least one Evo</title></circle>`;
+    }
+
+    const markers = [...new Set([1, 10, 50].filter((t) => t <= n))];
+    markers.forEach((t) => {
+      const px = X(t);
+      const py = Y(1 - survival[t]);
+      const anchor = t === n && n !== 1 ? 'end' : 'start';
+      const dx = anchor === 'end' ? -8 : 8;
+      s += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="3.6" fill="#0c0f16" stroke="#ff4d63" stroke-width="2"/>`;
+      s += `<text class="marker-label" x="${(px + dx).toFixed(1)}" y="${(py - 9).toFixed(1)}" text-anchor="${anchor}">${fmtPct(1 - survival[t])}</text>`;
+    });
+
+    setSvg(els.chartA, W, H, s);
+  }
+
+  function renderChartB(dist, n) {
+    let cum = 0;
+    let K = 0;
+    for (let k = 0; k <= n; k++) {
+      cum += dist[k];
+      K = k;
+      if (cum >= 0.9995) break;
+    }
+    K = Math.min(K, 28);
+
+    const W = Math.max(300, Math.round(els.chartB.clientWidth || 720));
+    const narrow = W < 560;
+    const H = narrow ? 222 : 244;
+    const padL = narrow ? 42 : 48;
+    const padR = 12;
+    const padT = 28;
+    const padB = 42;
+    const iw = W - padL - padR;
+    const ih = H - padT - padB;
+
+    let maxV = 1e-9;
+    for (let k = 0; k <= K; k++) maxV = Math.max(maxV, dist[k]);
+    const top = niceCeil(maxV);
+    const Y = (v) => padT + (1 - v / top) * ih;
+    const count = K + 1;
+    const band = iw / count;
+    const bw = Math.max(2, Math.min(44, band * 0.62));
+
+    let s = '<defs><linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="#ff5c72"/>' +
+      '<stop offset="100%" stop-color="#a30f2a"/>' +
+      '</linearGradient></defs>';
+
+    for (let g = 0; g <= 4; g++) {
+      const v = (top * g) / 4;
+      s += `<line class="grid" x1="${padL}" y1="${Y(v).toFixed(1)}" x2="${W - padR}" y2="${Y(v).toFixed(1)}"/>`;
+      s += `<text class="axis-label" x="${padL - 8}" y="${(Y(v) + 4).toFixed(1)}" text-anchor="end">${fmtAxisPct(v)}</text>`;
+    }
+
+    for (let k = 0; k <= K; k++) {
+      const v = dist[k];
+      const h = v > 0 ? Math.max(1.5, ih * (v / top)) : 0;
+      const cx = padL + band * (k + 0.5);
+      const x = cx - bw / 2;
+      const y = padT + ih - h;
+      const fill = k === 0 ? '#3a4356' : 'url(#barGrad)';
+
+      s += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${fill}">` +
+        `<title>Exactly ${k} Evo${k === 1 ? '' : 's'}: ${fmtPct(v)}</title></rect>`;
+
+      if (count <= 14 && v > 0) {
+        s += `<text class="bar-label" x="${cx.toFixed(1)}" y="${(y - 6).toFixed(1)}" text-anchor="middle">${fmtBarPct(v)}</text>`;
+      }
+
+      if (count <= 18 || k % 2 === 0 || k === K) {
+        s += `<text class="axis-label" x="${cx.toFixed(1)}" y="${H - 23}" text-anchor="middle">${k}</text>`;
+      }
+    }
+
+    s += `<text class="axis-title" x="${(padL + iw / 2).toFixed(1)}" y="${H - 5}" text-anchor="middle">Evo skins obtained</text>`;
+
+    setSvg(els.chartB, W, H, s);
+  }
+
+  function renderTable(dist, n) {
+    let cum = 0;
+    let K = 0;
+    for (let k = 0; k <= n; k++) {
+      cum += dist[k];
+      K = k;
+      if (cum >= 0.9995) break;
+    }
+    K = Math.min(K, 20);
+
+    let cdf = 0;
+    const rows = [];
+    for (let k = 0; k <= K; k++) {
+      const p = dist[k];
+      const atLeast = Math.max(0, 1 - cdf);
+      cdf += p;
+      rows.push(`<tr><td>${k}</td><td>${fmtTablePct(p)}</td><td>${fmtTablePct(atLeast)}</td></tr>`);
+    }
+    els.tableBody.innerHTML = rows.join('');
+    const rest = Math.max(0, 1 - cdf);
+    els.tableNote.textContent =
+      K < n && rest > 1e-9
+        ? `Showing k ≤ ${K}. All outcomes with k > ${K} total ${fmtTablePct(rest)}.`
+        : 'All outcomes shown.';
+  }
+
+  // ---------- main render ----------
+
+  function updateCard(id, n, survival) {
+    const c = 1 - survival[n];
+    const chanceEl = $('chance-' + id);
+    const oddsEl = $('odds-' + id);
+    if (chanceEl) chanceEl.textContent = fmtPct(c);
+    if (oddsEl) oddsEl.textContent = shortOdds(c);
+  }
+
+  function recompute() {
+    const cfg = currentCfg();
+    const plan = clamp(Math.round(state.plan), 1, 300);
+    state.plan = plan;
+    const customN = clamp(readInt(els.customPulls, DEFAULTS.custom, 1, 300), 1, 300);
+
+    const maxT = Math.max(plan, 50, customN);
+    const survival = survivalUpTo(maxT, cfg);
+    const chance = clamp(1 - survival[plan], 0, 1);
+
+    let guaranteeDraw = null;
+    if (chance >= 0.99995) {
+      for (let t = 1; t <= plan; t++) {
+        if (survival[t] <= 1e-12) { guaranteeDraw = t; break; }
+      }
+    }
+
+    els.heroEyebrow.textContent = `Chance of at least one Evo · ${plan} pull${plan === 1 ? '' : 's'}`;
+    els.heroValue.textContent = fmtPct(chance);
+    els.heroValue.classList.toggle('guaranteed', chance >= 0.99995);
+    els.heroOdds.textContent = heroOddsText(chance, cfg, plan, guaranteeDraw);
+
+    const dist = evoDist(plan, cfg);
+    let expected = 0;
+    for (let k = 1; k <= plan; k++) expected += k * dist[k];
+    const twoPlus = plan >= 2 ? clamp(1 - dist[0] - dist[1], 0, 1) : 0;
+
+    els.expEvos.textContent = trimFixed(expected, 2);
+    els.chance2.textContent = fmtPct(twoPlus);
+
+    const first = firstEvoStats(cfg);
+    els.expFirst.textContent = fmtDraws(first.mean);
+    els.medFirst.textContent = Number.isFinite(first.median) ? String(first.median) : '—';
+
+    updateCard('1', 1, survival);
+    updateCard('10', 10, survival);
+    updateCard('50', 50, survival);
+    const customChance = 1 - survival[customN];
+    els.customMeta.textContent = `${fmtPct(customChance)} · ${shortOdds(customChance)}`;
+
+    els.planCards.forEach((card) => {
+      const active = state.activePreset === Number(card.dataset.plan);
+      card.classList.toggle('active', active);
+      card.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    els.customCard.classList.toggle('active', state.activePreset === null);
+
+    els.chartANote.textContent = chartNote(cfg, plan);
+    renderChartA(survival, plan);
+
+    els.chartBTitle.textContent = `Exactly k Evos in ${plan} pull${plan === 1 ? '' : 's'}`;
+    renderChartB(dist, plan);
+    renderTable(dist, plan);
+
+    els.tablePlan.textContent = `${plan} pull${plan === 1 ? '' : 's'}`;
+  }
+
+  // ---------- events ----------
+
+  function syncPityUI() {
+    els.pityToggle.setAttribute('aria-checked', String(state.pity));
+    els.pityFields.classList.toggle('is-disabled', !state.pity);
+    [els.hardPity, els.softStart, els.softInc].forEach((el) => {
+      el.disabled = !state.pity;
+    });
+  }
+
+  function normalizeField(el) {
+    if (el.id === 'baseRate') el.value = readNum(el, DEFAULTS.rate, 0, 100);
+    if (el.id === 'hardPity') el.value = Math.round(readNum(el, DEFAULTS.hardPity, 1, 1000));
+    if (el.id === 'softStart') el.value = Math.round(readNum(el, DEFAULTS.softStart, 1, 1000));
+    if (el.id === 'softInc') el.value = readNum(el, DEFAULTS.softInc, 0, 100);
+  }
+
+  [els.baseRate, els.hardPity, els.softStart, els.softInc].forEach((el) => {
+    el.addEventListener('input', schedule);
+    el.addEventListener('blur', () => {
+      normalizeField(el);
+      recompute();
+    });
+  });
+
+  els.pityToggle.addEventListener('click', () => {
+    state.pity = !state.pity;
+    syncPityUI();
+    recompute();
+  });
+
+  els.chips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      els.baseRate.value = chip.dataset.rate;
+      recompute();
+    });
+  });
+
+  els.planCards.forEach((card) => {
+    card.addEventListener('click', () => {
+      const n = Number(card.dataset.plan);
+      state.plan = n;
+      state.activePreset = n;
+      recompute();
+    });
+  });
+
+  els.customCard.addEventListener('click', (e) => {
+    if (e.target !== els.customPulls) els.customPulls.focus();
+    state.activePreset = null;
+    state.plan = readInt(els.customPulls, DEFAULTS.custom, 1, 300);
+    recompute();
+  });
+
+  els.customPulls.addEventListener('input', () => {
+    const v = parseInt(els.customPulls.value, 10);
+    if (Number.isFinite(v)) {
+      state.plan = clamp(v, 1, 300);
+      state.activePreset = null;
+      schedule();
+    }
+  });
+
+  els.customPulls.addEventListener('blur', () => {
+    const v = readInt(els.customPulls, state.plan, 1, 300);
+    els.customPulls.value = v;
+    state.plan = v;
+    state.activePreset = null;
+    recompute();
+  });
+
+  els.resetBtn.addEventListener('click', () => {
+    els.baseRate.value = DEFAULTS.rate;
+    els.hardPity.value = DEFAULTS.hardPity;
+    els.softStart.value = DEFAULTS.softStart;
+    els.softInc.value = DEFAULTS.softInc;
+    els.customPulls.value = DEFAULTS.custom;
+    state.pity = DEFAULTS.pity;
+    state.plan = DEFAULTS.plan;
+    state.activePreset = DEFAULTS.plan;
+    syncPityUI();
+    recompute();
+  });
+
+  window.addEventListener('resize', schedule);
+
+  syncPityUI();
+  recompute();
+})();
+</script>
+</body>
+</html>
